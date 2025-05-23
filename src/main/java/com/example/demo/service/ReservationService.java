@@ -1,18 +1,21 @@
-// ReservationService
 package com.example.demo.service;
 
 import com.example.demo.dto.ReservationDto;
 import com.example.demo.entity.Reservation;
 import com.example.demo.entity.CoworkingSpace;
 import com.example.demo.entity.User;
+import com.example.demo.exception.BadRequestException;
+import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.CoworkingSpaceRepository;
 import com.example.demo.repository.UserRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -25,63 +28,122 @@ public class ReservationService {
 
     // Create
     @Transactional
-    public ReservationDto createReservation(ReservationDto dto) {
-        CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
-                .orElseThrow(() -> new RuntimeException("Coworking space not found"));
-
-        List<User> users = userRepository.findAllById(dto.getUserIds());
-        if (users.isEmpty()) {
-            throw new RuntimeException("No valid users found");
+    public Optional<ReservationDto> createReservation(ReservationDto dto) {
+        // Проверка даты бронирования
+        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+            throw new BadRequestException("Reservation date cannot be in the past");
         }
 
+        // Проверка существования coworking space
+        CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
+            .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
+
+        // Проверка существования всех пользователей
+        List<User> users = userRepository.findAllById(dto.getUserIds());
+        if (users.size() != dto.getUserIds().size()) {
+            List<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toList());
+            List<Long> missingIds = dto.getUserIds().stream()
+                .filter(id -> !foundIds.contains(id))
+                .collect(Collectors.toList());
+            throw new NotFoundException("Users not found with IDs: " + missingIds);
+        }
+
+        // Проверка доступности пространства на эту дату
+        if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
+            dto.getReservationDate(), dto.getCoworkingSpaceId())) {
+            throw new BadRequestException("Coworking space is already reserved for this date");
+        }
+
+        // Создание бронирования
         Reservation reservation = new Reservation();
         reservation.setReservationDate(dto.getReservationDate());
         reservation.setCoworkingSpace(space);
         reservation.setUsers(users);
 
         Reservation saved = reservationRepository.save(reservation);
-        return convertToDto(saved);
+        return Optional.of(convertToDto(saved));
     }
 
     // Read
-    public ReservationDto getReservationById(Long id) {
-        Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
-        return convertToDto(reservation);
+    @Transactional(readOnly = true)
+    public Optional<ReservationDto> getReservationById(Long id) {
+        if (id == null || id <= 0) {
+            throw new BadRequestException("Invalid reservation ID");
+        }
+        return reservationRepository.findById(id)
+            .map(this::convertToDto);
     }
 
+    @Transactional(readOnly = true)
     public List<ReservationDto> getAllReservations() {
         return reservationRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+            .map(this::convertToDto)
+            .collect(Collectors.toList());
     }
 
     // Update
     @Transactional
-    public ReservationDto updateReservation(Long id, ReservationDto dto) {
-        Reservation existing = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
-
-        existing.setReservationDate(dto.getReservationDate());
-
-        if (dto.getCoworkingSpaceId() != null) {
-            CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
-                    .orElseThrow(() -> new RuntimeException("Coworking space not found"));
-            existing.setCoworkingSpace(space);
+    public Optional<ReservationDto> updateReservation(Long id, ReservationDto dto) {
+        if (id == null || id <= 0) {
+            throw new BadRequestException("Invalid reservation ID");
+        }
+        if (!id.equals(dto.getId())) {
+            throw new BadRequestException("ID in path and body must match");
+        }
+        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+            throw new BadRequestException("Reservation date cannot be in the past");
         }
 
-        if (dto.getUserIds() != null && !dto.getUserIds().isEmpty()) {
-            List<User> users = userRepository.findAllById(dto.getUserIds());
-            existing.setUsers(users);
-        }
+        return reservationRepository.findById(id)
+            .map(existing -> {
+                // Обновление даты
+                existing.setReservationDate(dto.getReservationDate());
 
-        Reservation updated = reservationRepository.save(existing);
-        return convertToDto(updated);
+                // Обновление coworking space (если изменился)
+                if (!existing.getCoworkingSpace().getId().equals(dto.getCoworkingSpaceId())) {
+                    CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
+                        .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
+                    existing.setCoworkingSpace(space);
+
+                    // Проверка доступности нового пространства на эту дату
+                    if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
+                        dto.getReservationDate(), dto.getCoworkingSpaceId())) {
+                        throw new BadRequestException("New coworking space is already reserved for this date");
+                    }
+                }
+
+                // Обновление пользователей (если изменились)
+                if (!existing.getUsers().stream()
+                    .map(User::getId)
+                    .collect(Collectors.toList())
+                    .containsAll(dto.getUserIds())) {
+                    List<User> users = userRepository.findAllById(dto.getUserIds());
+                    if (users.size() != dto.getUserIds().size()) {
+                        List<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toList());
+                        List<Long> missingIds = dto.getUserIds().stream()
+                            .filter(userId -> !foundIds.contains(userId))
+                            .collect(Collectors.toList());
+                        throw new NotFoundException("Users not found with IDs: " + missingIds);
+                    }
+                    existing.setUsers(users);
+                }
+
+                Reservation updated = reservationRepository.save(existing);
+                return convertToDto(updated);
+            });
     }
 
     // Delete
-    public void deleteReservation(Long id) {
+    @Transactional
+    public boolean deleteReservation(Long id) {
+        if (id == null || id <= 0) {
+            throw new BadRequestException("Invalid reservation ID");
+        }
+        if (!reservationRepository.existsById(id)) {
+            return false;
+        }
         reservationRepository.deleteById(id);
+        return true;
     }
 
     // Convert to DTO
@@ -91,9 +153,9 @@ public class ReservationService {
         dto.setReservationDate(reservation.getReservationDate());
         dto.setCoworkingSpaceId(reservation.getCoworkingSpace().getId());
         dto.setUserIds(
-                reservation.getUsers().stream()
-                        .map(User::getId)
-                        .collect(Collectors.toList())
+            reservation.getUsers().stream()
+                .map(User::getId)
+                .collect(Collectors.toList())
         );
         return dto;
     }
