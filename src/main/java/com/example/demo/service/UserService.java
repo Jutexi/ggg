@@ -4,17 +4,16 @@ import com.example.demo.dto.UserDto;
 import com.example.demo.entity.Reservation;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
-import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 @Service
 @RequiredArgsConstructor

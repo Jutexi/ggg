@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserCache extends LfuCache<User> {
-  public UserCache() {
-    super(100);
-  }
+    public UserCache() {
+        super(100);
+    }
 }

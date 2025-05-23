@@ -15,8 +15,8 @@ import java.util.List;
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
 
-  boolean existsByEmail(@NotBlank(message = "Email is required") @Email(message = "Invalid email format") @Size(max = 255, message = "Email must be less than 255 characters") String email);
+    boolean existsByEmail(@NotBlank(message = "Email is required") @Email(message = "Invalid email format") @Size(max = 255, message = "Email must be less than 255 characters") String email);
 
-  @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.reservationDate = :date")
-  List<User> findUsersWithReservationsOnDate(@Param("date") LocalDate date);
+    @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.reservationDate = :date")
+    List<User> findUsersWithReservationsOnDate(@Param("date") LocalDate date);
 }

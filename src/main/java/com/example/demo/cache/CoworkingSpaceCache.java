@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CoworkingSpaceCache extends LfuCache<CoworkingSpace> {
-  public CoworkingSpaceCache() {
-    super(100);
-  }
+    public CoworkingSpaceCache() {
+        super(100);
+    }
 }

@@ -6,17 +6,19 @@ import com.example.demo.entity.CoworkingSpace;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.NotFoundException;
-import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.CoworkingSpaceRepository;
+import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.UserRepository;
+import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
+
 
 @Service
 @RequiredArgsConstructor
@@ -27,6 +29,7 @@ public class ReservationService {
     private final UserRepository userRepository;
 
     // Create
+    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     @Transactional
     public Optional<ReservationDto> createReservation(ReservationDto dto) {
         // Проверка даты бронирования
@@ -102,7 +105,8 @@ public class ReservationService {
                 // Обновление coworking space (если изменился)
                 if (!existing.getCoworkingSpace().getId().equals(dto.getCoworkingSpaceId())) {
                     CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
-                        .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
+                        .orElseThrow(() -> new NotFoundException(
+                                "Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
                     existing.setCoworkingSpace(space);
 
                     // Проверка доступности нового пространства на эту дату
@@ -113,9 +117,9 @@ public class ReservationService {
                 }
 
                 // Обновление пользователей (если изменились)
-                if (!existing.getUsers().stream()
-                    .map(User::getId)
-                    .collect(Collectors.toList())
+                if (!new HashSet<>(existing.getUsers().stream()
+                        .map(User::getId)
+                        .collect(Collectors.toList()))
                     .containsAll(dto.getUserIds())) {
                     List<User> users = userRepository.findAllById(dto.getUserIds());
                     if (users.size() != dto.getUserIds().size()) {

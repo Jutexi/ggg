@@ -11,5 +11,5 @@ import java.time.LocalDate;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-  boolean existsByReservationDateAndCoworkingSpaceId(@NotNull(message = "Reservation date is required") @FutureOrPresent(message = "Reservation date must be today or in the future") LocalDate reservationDate, @NotNull(message = "Coworking space ID is required") Long coworkingSpaceId);
+    boolean existsByReservationDateAndCoworkingSpaceId(@NotNull(message = "Reservation date is required") @FutureOrPresent(message = "Reservation date must be today or in the future") LocalDate reservationDate, @NotNull(message = "Coworking space ID is required") Long coworkingSpaceId);
 }
