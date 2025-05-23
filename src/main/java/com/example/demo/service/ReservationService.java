@@ -1,8 +1,8 @@
 package com.example.demo.service;
 
 import com.example.demo.dto.ReservationDto;
-import com.example.demo.entity.Reservation;
 import com.example.demo.entity.CoworkingSpace;
+import com.example.demo.entity.Reservation;
 import com.example.demo.entity.User;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.NotFoundException;
@@ -14,11 +14,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,15 +37,16 @@ public class ReservationService {
 
         // Проверка существования coworking space
         CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
-            .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
+            .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: "
+                + dto.getCoworkingSpaceId()));
 
         // Проверка существования всех пользователей
         List<User> users = userRepository.findAllById(dto.getUserIds());
         if (users.size() != dto.getUserIds().size()) {
-            List<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toList());
+            List<Long> foundIds = users.stream().map(User::getId).toList();
             List<Long> missingIds = dto.getUserIds().stream()
                 .filter(id -> !foundIds.contains(id))
-                .collect(Collectors.toList());
+                .toList();
             throw new NotFoundException("Users not found with IDs: " + missingIds);
         }
 
@@ -104,7 +103,8 @@ public class ReservationService {
 
                 // Обновление coworking space (если изменился)
                 if (!existing.getCoworkingSpace().getId().equals(dto.getCoworkingSpaceId())) {
-                    CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
+                    CoworkingSpace space = coworkingSpaceRepository.findById(
+                        dto.getCoworkingSpaceId())
                         .orElseThrow(() -> new NotFoundException(
                                 "Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
                     existing.setCoworkingSpace(space);
@@ -112,7 +112,8 @@ public class ReservationService {
                     // Проверка доступности нового пространства на эту дату
                     if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
                         dto.getReservationDate(), dto.getCoworkingSpaceId())) {
-                        throw new BadRequestException("New coworking space is already reserved for this date");
+                        throw new BadRequestException(
+                            "New coworking space is already reserved for this date");
                     }
                 }
 
@@ -123,10 +124,10 @@ public class ReservationService {
                     .containsAll(dto.getUserIds())) {
                     List<User> users = userRepository.findAllById(dto.getUserIds());
                     if (users.size() != dto.getUserIds().size()) {
-                        List<Long> foundIds = users.stream().map(User::getId).collect(Collectors.toList());
+                        List<Long> foundIds = users.stream().map(User::getId).toList();
                         List<Long> missingIds = dto.getUserIds().stream()
                             .filter(userId -> !foundIds.contains(userId))
-                            .collect(Collectors.toList());
+                            .toList();
                         throw new NotFoundException("Users not found with IDs: " + missingIds);
                     }
                     existing.setUsers(users);

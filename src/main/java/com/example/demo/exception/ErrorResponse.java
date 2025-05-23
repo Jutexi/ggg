@@ -1,8 +1,13 @@
 package com.example.demo.exception;
 
 import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class ErrorResponse {
+    // Геттеры и сеттеры
     private int status;
     private String error;
     private String message;
@@ -14,17 +19,4 @@ public class ErrorResponse {
         this.message = message;
         this.timestamp = LocalDateTime.now();
     }
-
-    // Геттеры и сеттеры
-    public int getStatus() { return status; }
-    public void setStatus(int status) { this.status = status; }
-
-    public String getError() { return error; }
-    public void setError(String error) { this.error = error; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public LocalDateTime getTimestamp() { return timestamp; }
-    public void setTimestamp(LocalDateTime timestamp) { this.timestamp = timestamp; }
 }

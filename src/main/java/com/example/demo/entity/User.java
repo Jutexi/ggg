@@ -1,6 +1,5 @@
 package com.example.demo.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -37,6 +36,5 @@ public class User {
     private String password;
 
     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-    //@JsonIgnoreProperties({"users", "coworkingSpace"})
     private List<Reservation> reservations;
 }

@@ -4,16 +4,14 @@ import com.example.demo.dto.CoworkingSpaceDto;
 import com.example.demo.entity.CoworkingSpace;
 import com.example.demo.entity.Reservation;
 import com.example.demo.exception.BadRequestException;
-import com.example.demo.exception.NotFoundException;
 import com.example.demo.repository.CoworkingSpaceRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -74,7 +72,9 @@ public class CoworkingSpaceService {
                 // Проверка на уникальность имени, если оно изменилось
                 if (!existing.getName().equals(dto.getName())) {
                     if (coworkingSpaceRepository.existsByName(dto.getName())) {
-                        throw new BadRequestException("Space with name '" + dto.getName() + "' already exists");
+                        throw new BadRequestException("Space with name '"
+                            + dto.getName()
+                            + "' already exists");
                     }
                 }
 
