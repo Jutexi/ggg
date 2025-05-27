@@ -4,6 +4,8 @@ import com.example.demo.dto.UserDto;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.NotFoundException;
 import com.example.demo.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
 import java.util.List;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Пользователи", description = "Операции с пользователями")
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -27,6 +30,7 @@ public class UserController {
 
     private final UserService userService;
 
+    @Operation(summary = "Создать нового пользователя")
     @PostMapping
     public ResponseEntity<UserDto> createUser(@Valid @RequestBody UserDto dto) {
         if (dto.getId() != null) {
@@ -37,6 +41,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @Operation(summary = "Получить пользователя по {id}")
     @GetMapping("/{id}")
     public ResponseEntity<UserDto> getUser(@PathVariable Long id) {
         if (id == null || id <= 0) {
@@ -47,6 +52,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+    @Operation(summary = "Получить всех пользователей")
     @GetMapping
     public ResponseEntity<List<UserDto>> getAllUsers() {
         List<UserDto> users = userService.getAllUsers();
@@ -56,6 +62,7 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @Operation(summary = "Обновить данные пользователя")
     @PutMapping("/{id}")
     public ResponseEntity<UserDto> updateUser(
         @PathVariable Long id,
@@ -71,6 +78,7 @@ public class UserController {
         return ResponseEntity.ok(updatedUser);
     }
 
+    @Operation(summary = "Удалить пользователя")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         if (id == null || id <= 0) {
@@ -82,6 +90,7 @@ public class UserController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(summary = "Получить всех с бронированием на дату")
     @GetMapping("/with-reservations")
     public ResponseEntity<List<UserDto>> getUsersWithReservationsOnDate(
         @RequestParam("date") LocalDate date) {
