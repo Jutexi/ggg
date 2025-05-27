@@ -16,6 +16,10 @@ public class UserDto {
     @Size(max = 50, message = "First name must be less than 50 characters")
     private String firstName;
 
+    @NotBlank(message = "First name is required")
+    @Size(max = 50, message = "First name must be less than 50 characters")
+    private String middleName;
+
     @NotBlank(message = "Last name is required")
     @Size(max = 50, message = "Last name must be less than 50 characters")
     private String lastName;

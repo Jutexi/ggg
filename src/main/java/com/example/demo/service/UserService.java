@@ -31,6 +31,7 @@ public class UserService {
 
         User user = new User();
         user.setFirstName(dto.getFirstName());
+        user.setMiddleName(dto.getMiddleName());
         user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
         user.setPassword(dto.getPassword());
@@ -75,6 +76,7 @@ public class UserService {
                 }
 
                 existing.setFirstName(dto.getFirstName());
+                existing.setMiddleName(dto.getMiddleName());
                 existing.setLastName(dto.getLastName());
                 existing.setEmail(dto.getEmail());
                 if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
@@ -113,6 +115,7 @@ public class UserService {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
         dto.setFirstName(user.getFirstName());
+        dto.setMiddleName(user.getMiddleName());
         dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
         dto.setPassword(null);
