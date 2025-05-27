@@ -31,7 +31,7 @@ public class Reservation {
     private Long id;
 
     @Column(nullable = false)
-    private LocalDate reservationDate;
+    private LocalDate date;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coworking_space_id", nullable = false)

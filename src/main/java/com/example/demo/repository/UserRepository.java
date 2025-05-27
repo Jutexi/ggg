@@ -20,6 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
                           @Size(max = 255, message = "Email must be less than 255 characters")
                           String email);
 
-    @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.reservationDate = :date")
+    @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.date = :date")
     List<User> findUsersWithReservationsOnDate(@Param("date") LocalDate date);
 }

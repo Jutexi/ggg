@@ -15,7 +15,7 @@ public class ReservationDto {
 
     @NotNull(message = "Reservation date is required")
     @FutureOrPresent(message = "Reservation date must be today or in the future")
-    private LocalDate reservationDate;
+    private LocalDate date;
 
     @NotNull(message = "Coworking space ID is required")
     private Long coworkingSpaceId;

@@ -30,7 +30,8 @@ public class UserService {
         }
 
         User user = new User();
-        user.setFullName(dto.getFullName());
+        user.setFirstName(dto.getFirstName());
+        user.setLastName(dto.getLastName());
         user.setEmail(dto.getEmail());
         user.setPassword(dto.getPassword());
 
@@ -73,7 +74,8 @@ public class UserService {
                     throw new BadRequestException("Email already exists: " + dto.getEmail());
                 }
 
-                existing.setFullName(dto.getFullName());
+                existing.setFirstName(dto.getFirstName());
+                existing.setLastName(dto.getLastName());
                 existing.setEmail(dto.getEmail());
                 if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
                     existing.setPassword(dto.getPassword());
@@ -110,7 +112,8 @@ public class UserService {
     private UserDto convertToDto(User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
-        dto.setFullName(user.getFullName());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
         dto.setEmail(user.getEmail());
         dto.setPassword(null);
         dto.setReservationIds(

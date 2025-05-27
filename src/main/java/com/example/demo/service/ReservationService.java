@@ -31,7 +31,7 @@ public class ReservationService {
     // Create
     @Transactional
     public Optional<ReservationDto> createReservation(ReservationDto dto) {
-        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+        if (dto.getDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Reservation date cannot be in the past");
         }
 
@@ -48,13 +48,13 @@ public class ReservationService {
             .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: "
                 + dto.getCoworkingSpaceId()));
 
-        if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
-            dto.getReservationDate(), dto.getCoworkingSpaceId())) {
+        if (reservationRepository.existsByDateAndCoworkingSpaceId(
+            dto.getDate(), dto.getCoworkingSpaceId())) {
             throw new BadRequestException("Coworking space is already reserved for this date");
         }
 
         Reservation reservation = new Reservation();
-        reservation.setReservationDate(dto.getReservationDate());
+        reservation.setDate(dto.getDate());
         reservation.setCoworkingSpace(space);
         reservation.setUsers(users);
 
@@ -101,13 +101,13 @@ public class ReservationService {
         if (!id.equals(dto.getId())) {
             throw new BadRequestException("ID in path and body must match");
         }
-        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+        if (dto.getDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Reservation date cannot be in the past");
         }
 
         return reservationRepository.findById(id)
             .map(existing -> {
-                existing.setReservationDate(dto.getReservationDate());
+                existing.setDate(dto.getDate());
 
                 if (!existing.getCoworkingSpace().getId().equals(dto.getCoworkingSpaceId())) {
                     CoworkingSpace space = coworkingSpaceRepository.findById(
@@ -116,8 +116,8 @@ public class ReservationService {
                             "Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
                     existing.setCoworkingSpace(space);
 
-                    if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
-                        dto.getReservationDate(), dto.getCoworkingSpaceId())) {
+                    if (reservationRepository.existsByDateAndCoworkingSpaceId(
+                        dto.getDate(), dto.getCoworkingSpaceId())) {
                         throw new BadRequestException(
                             "New coworking space is already reserved for this date");
                     }
@@ -161,7 +161,7 @@ public class ReservationService {
     private ReservationDto convertToDto(Reservation reservation) {
         ReservationDto dto = new ReservationDto();
         dto.setId(reservation.getId());
-        dto.setReservationDate(reservation.getReservationDate());
+        dto.setDate(reservation.getDate());
         dto.setCoworkingSpaceId(reservation.getCoworkingSpace().getId());
         dto.setUserIds(
             reservation.getUsers().stream()

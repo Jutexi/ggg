@@ -10,9 +10,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
 
-    boolean existsByReservationDateAndCoworkingSpaceId(
+    boolean existsByDateAndCoworkingSpaceId(
         @NotNull(message = "Reservation date is required")
         @FutureOrPresent(message = "Reservation date must be today or in the future")
-        LocalDate reservationDate,
+        LocalDate date,
         @NotNull(message = "Coworking space ID is required") Long coworkingSpaceId);
 }

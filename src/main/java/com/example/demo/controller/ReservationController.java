@@ -31,7 +31,7 @@ public class ReservationController {
         if (dto.getId() != null) {
             throw new BadRequestException("ID should not be provided for creation");
         }
-        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+        if (dto.getDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Reservation date cannot be in the past");
         }
 
@@ -69,7 +69,7 @@ public class ReservationController {
         if (!id.equals(dto.getId())) {
             throw new BadRequestException("ID in path and body must match");
         }
-        if (dto.getReservationDate().isBefore(LocalDate.now())) {
+        if (dto.getDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Reservation date cannot be in the past");
         }
 
