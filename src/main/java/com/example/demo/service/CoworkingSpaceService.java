@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.cache.CoworkingSpaceCache;
 import com.example.demo.dto.CoworkingSpaceDto;
 import com.example.demo.entity.CoworkingSpace;
 import com.example.demo.entity.Reservation;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CoworkingSpaceService {
 
     private final CoworkingSpaceRepository coworkingSpaceRepository;
+    private final CoworkingSpaceCache coworkingSpaceCache;
 
     // Create
     @Transactional
@@ -35,6 +37,7 @@ public class CoworkingSpaceService {
         space.setAddress(dto.getAddress());
 
         CoworkingSpace saved = coworkingSpaceRepository.save(space);
+        coworkingSpaceCache.put(saved.getId(), saved); // Добавляем в кэш
         return Optional.of(convertToDto(saved));
     }
 
@@ -45,13 +48,24 @@ public class CoworkingSpaceService {
             throw new BadRequestException("Invalid space ID");
         }
 
+        CoworkingSpace cachedSpace = coworkingSpaceCache.get(id); // Проверяем кэш
+        if (cachedSpace != null) {
+            return Optional.of(convertToDto(cachedSpace));
+        }
+
         return coworkingSpaceRepository.findById(id)
-            .map(this::convertToDto);
+            .map(space -> {
+                coworkingSpaceCache.put(space.getId(), space); // Кэшируем результат
+                return convertToDto(space);
+            });
     }
 
     @Transactional(readOnly = true)
     public List<CoworkingSpaceDto> getAllSpaces() {
-        return coworkingSpaceRepository.findAll().stream()
+        List<CoworkingSpace> spaces = coworkingSpaceRepository.findAll();
+        spaces.forEach(space ->
+            coworkingSpaceCache.put(space.getId(), space)); // Кэшируем все пространства
+        return spaces.stream()
             .map(this::convertToDto)
             .collect(Collectors.toList());
     }
@@ -69,7 +83,6 @@ public class CoworkingSpaceService {
 
         return coworkingSpaceRepository.findById(id)
             .map(existing -> {
-                // Проверка на уникальность имени, если оно изменилось
                 if (!existing.getName().equals(dto.getName())) {
                     if (coworkingSpaceRepository.existsByName(dto.getName())) {
                         throw new BadRequestException("Space with name '"
@@ -81,6 +94,7 @@ public class CoworkingSpaceService {
                 existing.setName(dto.getName());
                 existing.setAddress(dto.getAddress());
                 CoworkingSpace updated = coworkingSpaceRepository.save(existing);
+                coworkingSpaceCache.put(updated.getId(), updated); // Обновляем кэш
                 return convertToDto(updated);
             });
     }
@@ -97,6 +111,7 @@ public class CoworkingSpaceService {
         }
 
         coworkingSpaceRepository.deleteById(id);
+        coworkingSpaceCache.remove(id); // Удаляем из кэша
         return true;
     }
 

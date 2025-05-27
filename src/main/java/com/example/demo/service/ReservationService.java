@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.cache.ReservationCache;
 import com.example.demo.dto.ReservationDto;
 import com.example.demo.entity.CoworkingSpace;
 import com.example.demo.entity.Reservation;
@@ -25,22 +26,15 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final CoworkingSpaceRepository coworkingSpaceRepository;
     private final UserRepository userRepository;
+    private final ReservationCache reservationCache;
 
     // Create
-    @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
     @Transactional
     public Optional<ReservationDto> createReservation(ReservationDto dto) {
-        // Проверка даты бронирования
         if (dto.getReservationDate().isBefore(LocalDate.now())) {
             throw new BadRequestException("Reservation date cannot be in the past");
         }
 
-        // Проверка существования coworking space
-        CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
-            .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: "
-                + dto.getCoworkingSpaceId()));
-
-        // Проверка существования всех пользователей
         List<User> users = userRepository.findAllById(dto.getUserIds());
         if (users.size() != dto.getUserIds().size()) {
             List<Long> foundIds = users.stream().map(User::getId).toList();
@@ -50,19 +44,22 @@ public class ReservationService {
             throw new NotFoundException("Users not found with IDs: " + missingIds);
         }
 
-        // Проверка доступности пространства на эту дату
+        CoworkingSpace space = coworkingSpaceRepository.findById(dto.getCoworkingSpaceId())
+            .orElseThrow(() -> new NotFoundException("Coworking space not found with ID: "
+                + dto.getCoworkingSpaceId()));
+
         if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
             dto.getReservationDate(), dto.getCoworkingSpaceId())) {
             throw new BadRequestException("Coworking space is already reserved for this date");
         }
 
-        // Создание бронирования
         Reservation reservation = new Reservation();
         reservation.setReservationDate(dto.getReservationDate());
         reservation.setCoworkingSpace(space);
         reservation.setUsers(users);
 
         Reservation saved = reservationRepository.save(reservation);
+        reservationCache.put(saved.getId(), saved); // Добавляем в кэш
         return Optional.of(convertToDto(saved));
     }
 
@@ -72,13 +69,25 @@ public class ReservationService {
         if (id == null || id <= 0) {
             throw new BadRequestException("Invalid reservation ID");
         }
+
+        Reservation cachedReservation = reservationCache.get(id); // Проверяем кэш
+        if (cachedReservation != null) {
+            return Optional.of(convertToDto(cachedReservation));
+        }
+
         return reservationRepository.findById(id)
-            .map(this::convertToDto);
+            .map(reservation -> {
+                reservationCache.put(reservation.getId(), reservation); // Кэшируем результат
+                return convertToDto(reservation);
+            });
     }
 
     @Transactional(readOnly = true)
     public List<ReservationDto> getAllReservations() {
-        return reservationRepository.findAll().stream()
+        List<Reservation> reservations = reservationRepository.findAll();
+        reservations.forEach(reservation ->
+            reservationCache.put(reservation.getId(), reservation)); // Кэшируем все бронирования
+        return reservations.stream()
             .map(this::convertToDto)
             .collect(Collectors.toList());
     }
@@ -98,18 +107,15 @@ public class ReservationService {
 
         return reservationRepository.findById(id)
             .map(existing -> {
-                // Обновление даты
                 existing.setReservationDate(dto.getReservationDate());
 
-                // Обновление coworking space (если изменился)
                 if (!existing.getCoworkingSpace().getId().equals(dto.getCoworkingSpaceId())) {
                     CoworkingSpace space = coworkingSpaceRepository.findById(
                         dto.getCoworkingSpaceId())
                         .orElseThrow(() -> new NotFoundException(
-                                "Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
+                            "Coworking space not found with ID: " + dto.getCoworkingSpaceId()));
                     existing.setCoworkingSpace(space);
 
-                    // Проверка доступности нового пространства на эту дату
                     if (reservationRepository.existsByReservationDateAndCoworkingSpaceId(
                         dto.getReservationDate(), dto.getCoworkingSpaceId())) {
                         throw new BadRequestException(
@@ -117,10 +123,8 @@ public class ReservationService {
                     }
                 }
 
-                // Обновление пользователей (если изменились)
-                if (!new HashSet<>(existing.getUsers().stream()
-                        .map(User::getId)
-                        .collect(Collectors.toList()))
+                if (!new HashSet<>(existing.getUsers().stream().map(
+                    User::getId).collect(Collectors.toList()))
                     .containsAll(dto.getUserIds())) {
                     List<User> users = userRepository.findAllById(dto.getUserIds());
                     if (users.size() != dto.getUserIds().size()) {
@@ -134,6 +138,7 @@ public class ReservationService {
                 }
 
                 Reservation updated = reservationRepository.save(existing);
+                reservationCache.put(updated.getId(), updated); // Обновляем кэш
                 return convertToDto(updated);
             });
     }
@@ -148,6 +153,7 @@ public class ReservationService {
             return false;
         }
         reservationRepository.deleteById(id);
+        reservationCache.remove(id); // Удаляем из кэша
         return true;
     }
 
