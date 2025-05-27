@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import com.example.demo.dto.ReservationDto;
 import com.example.demo.exception.BadRequestException;
 import com.example.demo.exception.NotFoundException;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Бронирования", description = "Операции с бронированиями коворкинг-пространств")
 @RestController
 @RequestMapping("/api/reservations")
 @RequiredArgsConstructor
@@ -26,6 +29,7 @@ public class ReservationController {
 
     private final ReservationService reservationService;
 
+    @Operation(summary = "Создать новое бронирование")
     @PostMapping
     public ResponseEntity<ReservationDto> createReservation(@Valid@RequestBody ReservationDto dto) {
         if (dto.getId() != null) {
@@ -40,6 +44,7 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @Operation(summary = "Получить бронирование по ID")
     @GetMapping("/{id}")
     public ResponseEntity<ReservationDto> getReservation(@PathVariable Long id) {
         if (id == null || id <= 0) {
@@ -50,6 +55,7 @@ public class ReservationController {
         return ResponseEntity.ok(reservation);
     }
 
+    @Operation(summary = "Получить все бронирования")
     @GetMapping
     public ResponseEntity<List<ReservationDto>> getAllReservations() {
         List<ReservationDto> reservations = reservationService.getAllReservations();
@@ -59,6 +65,7 @@ public class ReservationController {
         return ResponseEntity.ok(reservations);
     }
 
+    @Operation(summary = "Обновить бронирование по ID")
     @PutMapping("/{id}")
     public ResponseEntity<ReservationDto> updateReservation(
         @PathVariable Long id,
@@ -78,6 +85,7 @@ public class ReservationController {
         return ResponseEntity.ok(updatedReservation);
     }
 
+    @Operation(summary = "Удалить бронирование по ID")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteReservation(@PathVariable Long id) {
         if (id == null || id <= 0) {
