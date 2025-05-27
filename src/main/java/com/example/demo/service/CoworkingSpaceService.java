@@ -67,7 +67,7 @@ public class CoworkingSpaceService {
             coworkingSpaceCache.put(space.getId(), space)); // Кэшируем все пространства
         return spaces.stream()
             .map(this::convertToDto)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     // Update
@@ -83,12 +83,11 @@ public class CoworkingSpaceService {
 
         return coworkingSpaceRepository.findById(id)
             .map(existing -> {
-                if (!existing.getName().equals(dto.getName())) {
-                    if (coworkingSpaceRepository.existsByName(dto.getName())) {
-                        throw new BadRequestException("Space with name '"
-                            + dto.getName()
-                            + "' already exists");
-                    }
+                if (!existing.getName().equals(dto.getName())
+                    && coworkingSpaceRepository.existsByName(dto.getName())) {
+                    throw new BadRequestException("Space with name '"
+                        + dto.getName()
+                        + "' already exists");
                 }
 
                 existing.setName(dto.getName());

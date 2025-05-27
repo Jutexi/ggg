@@ -89,7 +89,7 @@ public class ReservationService {
             reservationCache.put(reservation.getId(), reservation)); // Кэшируем все бронирования
         return reservations.stream()
             .map(this::convertToDto)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     // Update

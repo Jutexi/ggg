@@ -60,7 +60,7 @@ public class UserService {
         users.forEach(user -> userCache.put(user.getId(), user)); // Кэшируем всех пользователей
         return users.stream()
             .map(this::convertToDto)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     // Update
@@ -104,7 +104,7 @@ public class UserService {
         users.forEach(user -> userCache.put(user.getId(), user)); // Кэшируем пользователей
         return users.stream()
             .map(this::convertToDto)
-            .collect(Collectors.toList());
+            .toList();
     }
 
     private UserDto convertToDto(User user) {
