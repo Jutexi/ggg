@@ -96,4 +96,29 @@ public class ReservationController {
         }
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Создать несколько бронирований")
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ReservationDto>> createReservationsBulk(@Valid @RequestBody List<ReservationDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            throw new BadRequestException("Reservation list cannot be empty");
+        }
+
+        // Check if any IDs are provided (shouldn't be for creation)
+        if (dtos.stream().anyMatch(dto -> dto.getId() != null)) {
+            throw new BadRequestException("IDs should not be provided for creation");
+        }
+
+        // Check for duplicate reservations (same space and date)
+        long uniqueReservationCount = dtos.stream()
+            .map(dto -> dto.getCoworkingSpaceId() + "|" + dto.getDate())
+            .distinct()
+            .count();
+        if (uniqueReservationCount != dtos.size()) {
+            throw new BadRequestException("Duplicate reservations (same space and date) in the request");
+        }
+
+        List<ReservationDto> createdReservations = reservationService.createReservationsBulk(dtos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdReservations);
+    }
 }

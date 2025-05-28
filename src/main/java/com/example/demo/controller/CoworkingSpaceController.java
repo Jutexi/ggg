@@ -7,6 +7,8 @@ import com.example.demo.service.CoworkingSpaceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -86,5 +88,27 @@ public class CoworkingSpaceController {
             throw new NotFoundException("Space not found with ID: " + id);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Создать несколько коворкинг-пространств")
+    @PostMapping("/bulk")
+    public ResponseEntity<List<CoworkingSpaceDto>> createSpacesBulk(@Valid @RequestBody List<CoworkingSpaceDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            throw new BadRequestException("Space list cannot be empty");
+        }
+
+        // Check if any IDs are provided (shouldn't be for creation)
+        if (dtos.stream().anyMatch(dto -> dto.getId() != null)) {
+            throw new BadRequestException("IDs should not be provided for creation");
+        }
+
+        // Check for duplicate names in the request
+        List<String> names = dtos.stream().map(CoworkingSpaceDto::getName).toList();
+        if (names.size() != new HashSet<>(names).size()) {
+            throw new BadRequestException("Duplicate space names in the request");
+        }
+
+        List<CoworkingSpaceDto> createdSpaces = spaceService.createSpacesBulk(dtos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdSpaces);
     }
 }

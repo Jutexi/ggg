@@ -6,10 +6,15 @@ import jakarta.validation.constraints.Size;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.Optional;
+
 @Repository
 public interface CoworkingSpaceRepository extends JpaRepository<CoworkingSpace, Long> {
 
     boolean existsByName(@NotBlank(message = "Name is required")
                          @Size(max = 100, message = "Name must be less than 100 characters")
                          String name);
+
+    List<CoworkingSpace> findByNameIn(List<String> names);
 }

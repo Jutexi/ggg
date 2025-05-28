@@ -113,6 +113,42 @@ public class CoworkingSpaceService {
         coworkingSpaceCache.remove(id); // Удаляем из кэша
         return true;
     }
+    @Transactional
+    public List<CoworkingSpaceDto> createSpacesBulk(List<CoworkingSpaceDto> dtos) {
+        // Check for empty names
+        if (dtos.stream().anyMatch(dto -> dto.getName() == null || dto.getName().trim().isEmpty())) {
+            throw new BadRequestException("Space name cannot be empty");
+        }
+
+        // Check if any names already exist in database
+        List<String> names = dtos.stream().map(CoworkingSpaceDto::getName).toList();
+        List<String> existingNames = coworkingSpaceRepository.findByNameIn(names).stream()
+            .map(CoworkingSpace::getName)
+            .toList();
+
+        if (!existingNames.isEmpty()) {
+            throw new BadRequestException("Spaces with these names already exist: " + existingNames);
+        }
+
+        // Convert all DTOs to entities
+        List<CoworkingSpace> spaces = dtos.stream().map(dto -> {
+            CoworkingSpace space = new CoworkingSpace();
+            space.setName(dto.getName());
+            space.setAddress(dto.getAddress());
+            return space;
+        }).toList();
+
+        // Save all spaces
+        List<CoworkingSpace> savedSpaces = coworkingSpaceRepository.saveAll(spaces);
+
+        // Add to cache
+        savedSpaces.forEach(space -> coworkingSpaceCache.put(space.getId(), space));
+
+        // Convert to DTOs and return
+        return savedSpaces.stream()
+            .map(this::convertToDto)
+            .toList();
+    }
 
     // Convert to DTO
     private CoworkingSpaceDto convertToDto(CoworkingSpace space) {

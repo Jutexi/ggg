@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -102,5 +103,27 @@ public class UserController {
             throw new NotFoundException("No users found with reservations on date: " + date);
         }
         return ResponseEntity.ok(users);
+    }
+
+    @Operation(summary = "Создать несколько пользователей")
+    @PostMapping("/bulk")
+    public ResponseEntity<List<UserDto>> createUsersBulk(@Valid @RequestBody List<UserDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            throw new BadRequestException("User list cannot be empty");
+        }
+
+        // Check if any IDs are provided (shouldn't be for creation)
+        if (dtos.stream().anyMatch(dto -> dto.getId() != null)) {
+            throw new BadRequestException("IDs should not be provided for creation");
+        }
+
+        // Check for duplicate emails in the request
+        List<String> emails = dtos.stream().map(UserDto::getEmail).toList();
+        if (emails.size() != new HashSet<>(emails).size()) {
+            throw new BadRequestException("Duplicate emails in the request");
+        }
+
+        List<UserDto> createdUsers = userService.createUsersBulk(dtos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUsers);
     }
 }

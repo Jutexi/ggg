@@ -111,6 +111,41 @@ public class UserService {
             .toList();
     }
 
+    @Transactional
+    public List<UserDto> createUsersBulk(List<UserDto> dtos) {
+        // Check if any emails already exist in database
+        List<String> emails = dtos.stream().map(UserDto::getEmail).toList();
+        List<String> existingEmails = userRepository.findByEmailIn(emails).stream()
+            .map(User::getEmail)
+            .toList();
+
+        if (!existingEmails.isEmpty()) {
+            throw new BadRequestException("Emails already exist: " + existingEmails);
+        }
+
+        // Convert all DTOs to entities
+        List<User> users = dtos.stream().map(dto -> {
+            User user = new User();
+            user.setFirstName(dto.getFirstName());
+            user.setMiddleName(dto.getMiddleName());
+            user.setLastName(dto.getLastName());
+            user.setEmail(dto.getEmail());
+            user.setPassword(dto.getPassword());
+            return user;
+        }).toList();
+
+        // Save all users
+        List<User> savedUsers = userRepository.saveAll(users);
+
+        // Add to cache
+        savedUsers.forEach(user -> userCache.put(user.getId(), user));
+
+        // Convert to DTOs and return
+        return savedUsers.stream()
+            .map(this::convertToDto)
+            .toList();
+    }
+
     private UserDto convertToDto(User user) {
         UserDto dto = new UserDto();
         dto.setId(user.getId());
