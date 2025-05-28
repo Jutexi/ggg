@@ -111,6 +111,18 @@ public class UserService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<UserDto> getUsersByCoworkingSpace(Long coworkingSpaceId) {
+        if (coworkingSpaceId == null || coworkingSpaceId <= 0) {
+            throw new BadRequestException("Invalid coworking space ID");
+        }
+        List<User> users = userRepository.findUsersByCoworkingSpace(coworkingSpaceId);
+        users.forEach(user -> userCache.put(user.getId(), user)); // Кэшируем пользователей
+        return users.stream()
+            .map(this::convertToDto)
+            .toList();
+    }
+
     @Transactional
     public List<UserDto> createUsersBulk(List<UserDto> dtos) {
         // Check if any emails already exist in database

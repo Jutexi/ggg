@@ -105,6 +105,20 @@ public class UserController {
         return ResponseEntity.ok(users);
     }
 
+    @Operation(summary = "Получить всех пользователей в коворкинг-пространстве")
+    @GetMapping("/by-coworking-space")
+    public ResponseEntity<List<UserDto>> getUsersByCoworkingSpace(
+        @RequestParam("coworkingSpaceId") Long coworkingSpaceId) {
+        if (coworkingSpaceId == null || coworkingSpaceId <= 0) {
+            throw new BadRequestException("Invalid coworking space ID");
+        }
+        List<UserDto> users = userService.getUsersByCoworkingSpace(coworkingSpaceId);
+        if (users.isEmpty()) {
+            throw new NotFoundException("No users found in coworking space with ID: " + coworkingSpaceId);
+        }
+        return ResponseEntity.ok(users);
+    }
+
     @Operation(summary = "Создать несколько пользователей")
     @PostMapping("/bulk")
     public ResponseEntity<List<UserDto>> createUsersBulk(@Valid @RequestBody List<UserDto> dtos) {

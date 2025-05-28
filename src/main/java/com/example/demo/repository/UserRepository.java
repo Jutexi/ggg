@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -24,6 +23,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.date = :date")
     List<User> findUsersWithReservationsOnDate(@Param("date") LocalDate date);
+
+  @Query("SELECT DISTINCT u FROM User u JOIN u.reservations r WHERE r.coworkingSpace.id = :coworkingSpaceId")
+  List<User> findUsersByCoworkingSpace(@Param("coworkingSpaceId") Long coworkingSpaceId);
 
     List<User> findByEmailIn(List<String> emails);
 }
